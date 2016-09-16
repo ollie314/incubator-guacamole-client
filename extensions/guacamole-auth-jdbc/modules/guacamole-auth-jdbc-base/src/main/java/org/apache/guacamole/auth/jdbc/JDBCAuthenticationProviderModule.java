@@ -19,7 +19,8 @@
 
 package org.apache.guacamole.auth.jdbc;
 
-import org.apache.guacamole.auth.jdbc.user.UserContext;
+import com.google.inject.Scopes;
+import org.apache.guacamole.auth.jdbc.user.ModeledUserContext;
 import org.apache.guacamole.auth.jdbc.connectiongroup.RootConnectionGroup;
 import org.apache.guacamole.auth.jdbc.connectiongroup.ModeledConnectionGroup;
 import org.apache.guacamole.auth.jdbc.connectiongroup.ConnectionGroupDirectory;
@@ -32,7 +33,6 @@ import org.apache.guacamole.auth.jdbc.user.UserDirectory;
 import org.apache.guacamole.auth.jdbc.connectiongroup.ConnectionGroupMapper;
 import org.apache.guacamole.auth.jdbc.connection.ConnectionMapper;
 import org.apache.guacamole.auth.jdbc.connection.ConnectionRecordMapper;
-import org.apache.guacamole.auth.jdbc.connection.ParameterMapper;
 import org.apache.guacamole.auth.jdbc.permission.SystemPermissionMapper;
 import org.apache.guacamole.auth.jdbc.user.UserMapper;
 import org.apache.guacamole.auth.jdbc.connectiongroup.ConnectionGroupService;
@@ -59,8 +59,21 @@ import org.apache.guacamole.auth.jdbc.activeconnection.ActiveConnectionPermissio
 import org.apache.guacamole.auth.jdbc.activeconnection.ActiveConnectionPermissionSet;
 import org.apache.guacamole.auth.jdbc.activeconnection.ActiveConnectionService;
 import org.apache.guacamole.auth.jdbc.activeconnection.TrackedActiveConnection;
+import org.apache.guacamole.auth.jdbc.connection.ConnectionParameterMapper;
+import org.apache.guacamole.auth.jdbc.permission.SharingProfilePermissionMapper;
+import org.apache.guacamole.auth.jdbc.permission.SharingProfilePermissionService;
+import org.apache.guacamole.auth.jdbc.permission.SharingProfilePermissionSet;
+import org.apache.guacamole.auth.jdbc.sharing.ConnectionSharingService;
+import org.apache.guacamole.auth.jdbc.sharing.HashSharedConnectionMap;
+import org.apache.guacamole.auth.jdbc.sharing.SecureRandomShareKeyGenerator;
+import org.apache.guacamole.auth.jdbc.sharing.ShareKeyGenerator;
+import org.apache.guacamole.auth.jdbc.sharing.SharedConnectionMap;
+import org.apache.guacamole.auth.jdbc.sharingprofile.ModeledSharingProfile;
+import org.apache.guacamole.auth.jdbc.sharingprofile.SharingProfileDirectory;
+import org.apache.guacamole.auth.jdbc.sharingprofile.SharingProfileMapper;
+import org.apache.guacamole.auth.jdbc.sharingprofile.SharingProfileParameterMapper;
+import org.apache.guacamole.auth.jdbc.sharingprofile.SharingProfileService;
 import org.apache.guacamole.auth.jdbc.tunnel.RestrictedGuacamoleTunnelService;
-import org.apache.guacamole.net.auth.AuthenticationProvider;
 import org.mybatis.guice.MyBatisModule;
 import org.mybatis.guice.datasource.builtin.PooledDataSourceProvider;
 
@@ -80,26 +93,14 @@ public class JDBCAuthenticationProviderModule extends MyBatisModule {
     private final JDBCEnvironment environment;
 
     /**
-     * The AuthenticationProvider which is using this module to configure
-     * injection.
-     */
-    private final AuthenticationProvider authProvider;
-
-    /**
      * Creates a new JDBC authentication provider module that configures the
      * various injected base classes using the given environment, and provides
      * connections using the given socket service.
      *
-     * @param authProvider
-     *     The AuthenticationProvider which is using this module to configure
-     *     injection.
-     *
      * @param environment
      *     The environment to use to configure injected classes.
      */
-    public JDBCAuthenticationProviderModule(AuthenticationProvider authProvider,
-            JDBCEnvironment environment) {
-        this.authProvider = authProvider;
+    public JDBCAuthenticationProviderModule(JDBCEnvironment environment) {
         this.environment = environment;
     }
 
@@ -118,15 +119,17 @@ public class JDBCAuthenticationProviderModule extends MyBatisModule {
         addMapperClass(ConnectionGroupPermissionMapper.class);
         addMapperClass(ConnectionPermissionMapper.class);
         addMapperClass(ConnectionRecordMapper.class);
-        addMapperClass(ParameterMapper.class);
+        addMapperClass(ConnectionParameterMapper.class);
         addMapperClass(SystemPermissionMapper.class);
+        addMapperClass(SharingProfileMapper.class);
+        addMapperClass(SharingProfileParameterMapper.class);
+        addMapperClass(SharingProfilePermissionMapper.class);
         addMapperClass(UserMapper.class);
         addMapperClass(UserPermissionMapper.class);
         
         // Bind core implementations of guacamole-ext classes
         bind(ActiveConnectionDirectory.class);
         bind(ActiveConnectionPermissionSet.class);
-        bind(AuthenticationProvider.class).toInstance(authProvider);
         bind(JDBCEnvironment.class).toInstance(environment);
         bind(ConnectionDirectory.class);
         bind(ConnectionGroupDirectory.class);
@@ -135,11 +138,14 @@ public class JDBCAuthenticationProviderModule extends MyBatisModule {
         bind(ModeledConnection.class);
         bind(ModeledConnectionGroup.class);
         bind(ModeledGuacamoleConfiguration.class);
+        bind(ModeledSharingProfile.class);
         bind(ModeledUser.class);
+        bind(ModeledUserContext.class);
         bind(RootConnectionGroup.class);
+        bind(SharingProfileDirectory.class);
+        bind(SharingProfilePermissionSet.class);
         bind(SystemPermissionSet.class);
         bind(TrackedActiveConnection.class);
-        bind(UserContext.class);
         bind(UserDirectory.class);
         bind(UserPermissionSet.class);
         
@@ -149,10 +155,15 @@ public class JDBCAuthenticationProviderModule extends MyBatisModule {
         bind(ConnectionGroupPermissionService.class);
         bind(ConnectionGroupService.class);
         bind(ConnectionPermissionService.class);
+        bind(ConnectionSharingService.class);
         bind(ConnectionService.class);
         bind(GuacamoleTunnelService.class).to(RestrictedGuacamoleTunnelService.class);
         bind(PasswordEncryptionService.class).to(SHA256PasswordEncryptionService.class);
         bind(SaltService.class).to(SecureRandomSaltService.class);
+        bind(SharedConnectionMap.class).to(HashSharedConnectionMap.class).in(Scopes.SINGLETON);
+        bind(ShareKeyGenerator.class).to(SecureRandomShareKeyGenerator.class).in(Scopes.SINGLETON);
+        bind(SharingProfilePermissionService.class);
+        bind(SharingProfileService.class);
         bind(SystemPermissionService.class);
         bind(UserPermissionService.class);
         bind(UserService.class);

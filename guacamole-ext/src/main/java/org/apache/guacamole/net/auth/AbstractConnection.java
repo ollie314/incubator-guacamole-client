@@ -19,6 +19,9 @@
 
 package org.apache.guacamole.net.auth;
 
+import java.util.Collections;
+import java.util.Set;
+import org.apache.guacamole.GuacamoleException;
 import org.apache.guacamole.protocol.GuacamoleConfiguration;
 
 /**
@@ -26,17 +29,14 @@ import org.apache.guacamole.protocol.GuacamoleConfiguration;
  *
  * @author Michael Jumper
  */
-public abstract class AbstractConnection implements Connection {
+public abstract class AbstractConnection extends AbstractIdentifiable
+        implements Connection {
 
     /**
      * The name associated with this connection.
      */
     private String name;
 
-    /**
-     * The unique identifier associated with this connection.
-     */
-    private String identifier;
 
     /**
      * The unique identifier of the parent ConnectionGroup for
@@ -60,16 +60,6 @@ public abstract class AbstractConnection implements Connection {
     }
 
     @Override
-    public String getIdentifier() {
-        return identifier;
-    }
-
-    @Override
-    public void setIdentifier(String identifier) {
-        this.identifier = identifier;
-    }
-
-    @Override
     public String getParentIdentifier() {
         return parentIdentifier;
     }
@@ -90,27 +80,9 @@ public abstract class AbstractConnection implements Connection {
     }
 
     @Override
-    public int hashCode() {
-        if (identifier == null) return 0;
-        return identifier.hashCode();
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-
-        // Not equal if null or not a Connection
-        if (obj == null) return false;
-        if (!(obj instanceof AbstractConnection)) return false;
-
-        // Get identifier
-        String objIdentifier = ((AbstractConnection) obj).identifier;
-
-        // If null, equal only if this identifier is null
-        if (objIdentifier == null) return identifier == null;
-
-        // Otherwise, equal only if strings are identical
-        return objIdentifier.equals(identifier);
-
+    public Set<String> getSharingProfileIdentifiers()
+            throws GuacamoleException {
+        return Collections.<String>emptySet();
     }
 
 }

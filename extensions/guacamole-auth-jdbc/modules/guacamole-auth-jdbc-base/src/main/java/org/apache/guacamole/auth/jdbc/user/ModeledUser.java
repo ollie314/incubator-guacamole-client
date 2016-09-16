@@ -38,6 +38,7 @@ import org.apache.guacamole.GuacamoleException;
 import org.apache.guacamole.auth.jdbc.activeconnection.ActiveConnectionPermissionService;
 import org.apache.guacamole.auth.jdbc.permission.ConnectionGroupPermissionService;
 import org.apache.guacamole.auth.jdbc.permission.ConnectionPermissionService;
+import org.apache.guacamole.auth.jdbc.permission.SharingProfilePermissionService;
 import org.apache.guacamole.auth.jdbc.permission.UserPermissionService;
 import org.apache.guacamole.form.BooleanField;
 import org.apache.guacamole.form.DateField;
@@ -160,6 +161,12 @@ public class ModeledUser extends ModeledDirectoryObject<UserModel> implements Us
     private ConnectionGroupPermissionService connectionGroupPermissionService;
 
     /**
+     * Service for retrieving sharing profile permissions.
+     */
+    @Inject
+    private SharingProfilePermissionService sharingProfilePermissionService;
+
+    /**
      * Service for retrieving active connection permissions.
      */
     @Inject
@@ -249,6 +256,12 @@ public class ModeledUser extends ModeledDirectoryObject<UserModel> implements Us
     public ObjectPermissionSet getConnectionGroupPermissions()
             throws GuacamoleException {
         return connectionGroupPermissionService.getPermissionSet(getCurrentUser(), this);
+    }
+
+    @Override
+    public ObjectPermissionSet getSharingProfilePermissions()
+            throws GuacamoleException {
+        return sharingProfilePermissionService.getPermissionSet(getCurrentUser(), this);
     }
 
     @Override

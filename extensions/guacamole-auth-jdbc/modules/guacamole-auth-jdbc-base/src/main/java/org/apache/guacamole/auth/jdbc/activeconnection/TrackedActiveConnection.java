@@ -19,12 +19,17 @@
 
 package org.apache.guacamole.auth.jdbc.activeconnection;
 
+import com.google.inject.Inject;
 import java.util.Date;
+import org.apache.guacamole.GuacamoleException;
 import org.apache.guacamole.auth.jdbc.base.RestrictedObject;
+import org.apache.guacamole.auth.jdbc.connection.ModeledConnection;
+import org.apache.guacamole.auth.jdbc.sharing.ConnectionSharingService;
 import org.apache.guacamole.auth.jdbc.tunnel.ActiveConnectionRecord;
-import org.apache.guacamole.auth.jdbc.user.AuthenticatedUser;
+import org.apache.guacamole.auth.jdbc.user.ModeledAuthenticatedUser;
 import org.apache.guacamole.net.GuacamoleTunnel;
 import org.apache.guacamole.net.auth.ActiveConnection;
+import org.apache.guacamole.net.auth.credentials.UserCredentials;
 
 /**
  * An implementation of the ActiveConnection object which has an associated
@@ -35,14 +40,31 @@ import org.apache.guacamole.net.auth.ActiveConnection;
 public class TrackedActiveConnection extends RestrictedObject implements ActiveConnection {
 
     /**
+     * Service for managing shared connections.
+     */
+    @Inject
+    private ConnectionSharingService sharingService;
+
+    /**
      * The identifier of this active connection.
      */
     private String identifier;
 
     /**
-     * The identifier of the associated connection.
+     * The actual connection record from which this ActiveConnection derives its
+     * data.
      */
-    private String connectionIdentifier;
+    private ActiveConnectionRecord connectionRecord;
+
+    /**
+     * The connection being actively used or shared.
+     */
+    private ModeledConnection connection;
+
+    /**
+     * The identifier of the associated sharing profile.
+     */
+    private String sharingProfileIdentifier;
 
     /**
      * The date and time this active connection began.
@@ -83,16 +105,18 @@ public class TrackedActiveConnection extends RestrictedObject implements ActiveC
      *     as well. This includes the remote host, associated tunnel, and
      *     username.
      */
-    public void init(AuthenticatedUser currentUser,
+    public void init(ModeledAuthenticatedUser currentUser,
             ActiveConnectionRecord activeConnectionRecord,
             boolean includeSensitiveInformation) {
 
         super.init(currentUser);
+        this.connectionRecord = activeConnectionRecord;
         
         // Copy all non-sensitive data from given record
-        this.connectionIdentifier = activeConnectionRecord.getConnection().getIdentifier();
-        this.identifier           = activeConnectionRecord.getUUID().toString();
-        this.startDate            = activeConnectionRecord.getStartDate();
+        this.connection               = activeConnectionRecord.getConnection();
+        this.sharingProfileIdentifier = activeConnectionRecord.getSharingProfileIdentifier();
+        this.identifier               = activeConnectionRecord.getUUID().toString();
+        this.startDate                = activeConnectionRecord.getStartDate();
 
         // Include sensitive data, too, if requested
         if (includeSensitiveInformation) {
@@ -112,15 +136,46 @@ public class TrackedActiveConnection extends RestrictedObject implements ActiveC
     public void setIdentifier(String identifier) {
         this.identifier = identifier;
     }
- 
+
+    /**
+     * Returns the connection being actively used. If this active connection is
+     * not the primary connection, this will be the connection being actively
+     * shared.
+     *
+     * @return
+     *     The connection being actively used.
+     */
+    public ModeledConnection getConnection() {
+        return connection;
+    }
+
     @Override
     public String getConnectionIdentifier() {
-        return connectionIdentifier;
+        return connection.getIdentifier();
     }
 
     @Override
     public void setConnectionIdentifier(String connnectionIdentifier) {
-        this.connectionIdentifier = connnectionIdentifier;
+        throw new UnsupportedOperationException("The connection identifier of "
+                + "TrackedActiveConnection is inherited from the underlying "
+                + "connection.");
+    }
+
+    @Override
+    public String getSharingProfileIdentifier() {
+        return sharingProfileIdentifier;
+    }
+
+    @Override
+    public void setSharingProfileIdentifier(String sharingProfileIdentifier) {
+        this.sharingProfileIdentifier = sharingProfileIdentifier;
+    }
+
+    @Override
+    public UserCredentials getSharingCredentials(String identifier)
+            throws GuacamoleException {
+        return sharingService.generateTemporaryCredentials(getCurrentUser(),
+                connectionRecord, identifier);
     }
 
     @Override

@@ -22,17 +22,24 @@ package org.apache.guacamole.net.auth;
 import java.util.Date;
 import org.apache.guacamole.net.GuacamoleTunnel;
 
-public abstract class AbstractActiveConnection implements ActiveConnection {
-
-    /**
-     * The identifier of this active connection.
-     */
-    private String identifier;
+/**
+ * Base implementation of an ActiveConnection, providing storage and simply
+ * getters/setters for its main properties.
+ *
+ * @author Michael Jumper
+ */
+public abstract class AbstractActiveConnection extends AbstractIdentifiable
+        implements ActiveConnection {
 
     /**
      * The identifier of the associated connection.
      */
     private String connectionIdentifier;
+
+    /**
+     * The identifier of the associated sharing profile.
+     */
+    private String sharingProfileIdentifier;
 
     /**
      * The date and time this active connection began.
@@ -55,16 +62,6 @@ public abstract class AbstractActiveConnection implements ActiveConnection {
     private GuacamoleTunnel tunnel;
 
     @Override
-    public String getIdentifier() {
-        return identifier;
-    }
-
-    @Override
-    public void setIdentifier(String identifier) {
-        this.identifier = identifier;
-    }
- 
-    @Override
     public String getConnectionIdentifier() {
         return connectionIdentifier;
     }
@@ -72,6 +69,16 @@ public abstract class AbstractActiveConnection implements ActiveConnection {
     @Override
     public void setConnectionIdentifier(String connnectionIdentifier) {
         this.connectionIdentifier = connnectionIdentifier;
+    }
+
+    @Override
+    public String getSharingProfileIdentifier() {
+        return sharingProfileIdentifier;
+    }
+
+    @Override
+    public void setSharingProfileIdentifier(String sharingProfileIdentifier) {
+        this.sharingProfileIdentifier = sharingProfileIdentifier;
     }
 
     @Override

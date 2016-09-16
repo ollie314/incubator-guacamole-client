@@ -88,7 +88,7 @@ angular.module('index').config(['$routeProvider', '$locationProvider',
 
                 // Otherwise, reject and reroute
                 else {
-                    $location.url(homePage.url);
+                    $location.path(homePage.url);
                     route.reject();
                 }
 
@@ -134,6 +134,15 @@ angular.module('index').config(['$routeProvider', '$locationProvider',
             bodyClassName : 'manage',
             templateUrl   : 'app/manage/templates/manageConnection.html',
             controller    : 'manageConnectionController',
+            resolve       : { updateCurrentToken: updateCurrentToken }
+        })
+
+        // Sharing profile editor
+        .when('/manage/:dataSource/sharingProfiles/:id?', {
+            title         : 'APP.NAME',
+            bodyClassName : 'manage',
+            templateUrl   : 'app/manage/templates/manageSharingProfile.html',
+            controller    : 'manageSharingProfileController',
             resolve       : { updateCurrentToken: updateCurrentToken }
         })
 

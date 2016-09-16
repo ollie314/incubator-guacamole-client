@@ -1,42 +1,40 @@
 <div class="group-list">
 
-    <script type="text/ng-template" id="nestedGroup.html">
+    <script type="text/ng-template" id="nestedItem.html">
+        <div class="{{item.type}}" ng-if="isVisible(item.type)"
+            ng-class="{
+                expanded   : item.expanded,
+                expandable : item.expandable,
+                empty      : !item.children.length
+            }">
 
-        <!-- Connection -->
-        <div class="connection" ng-show="isVisibleConnection(item)">
-            <div class="caption">
-                <ng-include src="connectionTemplate"/>
-            </div>
-        </div>
-
-        <!-- Connection group -->
-        <div class="group" ng-show="isVisibleConnectionGroup(item)">
+            <!-- Item caption -->
             <div class="caption">
 
-                <!-- Connection group icon -->
-                <div class="icon group type" ng-click="toggleExpanded(item)"
-                     ng-class="{expanded: item.isExpanded, empty: !item.children.length, balancer: item.isBalancing}"></div>
+                <!-- Expand/collapse icon -->
+                <div class="icon expand" ng-click="toggleExpanded(item)"
+                    ng-if="item.expandable"></div>
 
-                <ng-include src="connectionGroupTemplate"/>
+                <ng-include src="templates[item.type]"/>
 
             </div>
 
-            <!-- Children of this group -->
-            <div class="children" ng-show="item.isExpanded">
-                <div class="list-item" ng-repeat="item in item.children | orderBy : 'name'" ng-include="'nestedGroup.html'">
+            <!-- Children of item (if any) -->
+            <div class="children" ng-if="item.expanded">
+                <div class="list-item" ng-repeat="item in item.children | orderBy : 'name'"
+                    ng-include="'nestedItem.html'"></div>
             </div>
 
         </div>
-
     </script>
 
     <!-- Root-level connections / groups -->
     <div class="group-list-page">
-        <div class="list-item" ng-repeat="item in childrenPage" ng-include="'nestedGroup.html'"></div>
+        <div class="list-item" ng-repeat="item in childrenPage" ng-include="'nestedItem.html'"></div>
     </div>
 
     <!-- Pager for connections / groups -->
-    <guac-pager page="childrenPage" items="rootItems | orderBy : 'name'"
+    <guac-pager page="childrenPage" items="rootItems | orderBy : ['weight', 'name']"
                 page-size="pageSize"></guac-pager>
 
 </div>

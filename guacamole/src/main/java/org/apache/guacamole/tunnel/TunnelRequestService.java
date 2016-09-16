@@ -23,19 +23,14 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.List;
 import org.apache.guacamole.GuacamoleException;
-import org.apache.guacamole.GuacamoleException;
-import org.apache.guacamole.GuacamoleSecurityException;
 import org.apache.guacamole.GuacamoleSecurityException;
 import org.apache.guacamole.GuacamoleSession;
 import org.apache.guacamole.GuacamoleUnauthorizedException;
-import org.apache.guacamole.GuacamoleUnauthorizedException;
-import org.apache.guacamole.net.DelegatingGuacamoleTunnel;
 import org.apache.guacamole.net.GuacamoleTunnel;
 import org.apache.guacamole.net.auth.Connection;
 import org.apache.guacamole.net.auth.ConnectionGroup;
 import org.apache.guacamole.net.auth.Directory;
 import org.apache.guacamole.net.auth.UserContext;
-import org.apache.guacamole.rest.ObjectRetrievalService;
 import org.apache.guacamole.rest.auth.AuthenticationService;
 import org.apache.guacamole.protocol.GuacamoleClientInformation;
 import org.slf4j.Logger;
@@ -64,12 +59,6 @@ public class TunnelRequestService {
      */
     @Inject
     private AuthenticationService authenticationService;
-
-    /**
-     * Service for convenient retrieval of objects.
-     */
-    @Inject
-    private ObjectRetrievalService retrievalService;
 
     /**
      * Reads and returns the client information provided within the given
@@ -222,6 +211,10 @@ public class TunnelRequestService {
      * @param session
      *     The Guacamole session to associate the tunnel with.
      *
+     * @param context
+     *     The UserContext associated with the user for whom the tunnel is
+     *     being created.
+     *
      * @param type
      *     The type of object being connected to (connection or group).
      *
@@ -237,12 +230,12 @@ public class TunnelRequestService {
      *     If an error occurs while obtaining the tunnel.
      */
     protected GuacamoleTunnel createAssociatedTunnel(GuacamoleTunnel tunnel,
-            final String authToken,  final GuacamoleSession session,
-            final TunnelRequest.Type type, final String id)
-            throws GuacamoleException {
+            final String authToken, final GuacamoleSession session,
+            final UserContext context, final TunnelRequest.Type type,
+            final String id) throws GuacamoleException {
 
         // Monitor tunnel closure and data
-        GuacamoleTunnel monitoredTunnel = new DelegatingGuacamoleTunnel(tunnel) {
+        UserTunnel monitoredTunnel = new UserTunnel(context, tunnel) {
 
             /**
              * The time the connection began, measured in milliseconds since
@@ -331,7 +324,7 @@ public class TunnelRequestService {
         GuacamoleClientInformation info = getClientInformation(request);
 
         GuacamoleSession session = authenticationService.getGuacamoleSession(authToken);
-        UserContext userContext = retrievalService.retrieveUserContext(session, authProviderIdentifier);
+        UserContext userContext = session.getUserContext(authProviderIdentifier);
 
         try {
 
@@ -339,7 +332,7 @@ public class TunnelRequestService {
             GuacamoleTunnel tunnel = createConnectedTunnel(userContext, type, id, info);
 
             // Associate tunnel with session
-            return createAssociatedTunnel(tunnel, authToken, session, type, id);
+            return createAssociatedTunnel(tunnel, authToken, session, userContext, type, id);
 
         }
 

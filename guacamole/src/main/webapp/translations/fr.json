@@ -38,8 +38,6 @@
 
         "INFO_ACTIVE_USER_COUNT" : "Actuellement utilisé par {USERS} {USERS, plural, one{utilisateur} other{utilisateurs}}.",
 
-        "NAME" : "Guacamole ${project.version}",
-
         "TEXT_HISTORY_DURATION" : "{VALUE} {UNIT, select, second{{VALUE, plural, one{seconde} other{secondes}}} minute{{VALUE, plural, one{minute} other{minutes}}} hour{{VALUE, plural, one{heure} other{heures}}} day{{VALUE, plural, one{jour} other{jours}}} other{}}"
 
     },
@@ -233,6 +231,22 @@
 
     },
 
+    "MANAGE_SHARING_PROFILE" : {
+
+        "ACTION_ACKNOWLEDGE" : "@:APP.ACTION_ACKNOWLEDGE",
+        "ACTION_CANCEL"      : "@:APP.ACTION_CANCEL",
+        "ACTION_CLONE"       : "@:APP.ACTION_CLONE",
+        "ACTION_DELETE"      : "@:APP.ACTION_DELETE",
+        "ACTION_SAVE"        : "@:APP.ACTION_SAVE",
+
+        "DIALOG_HEADER_ERROR" : "@:APP.DIALOG_HEADER_ERROR",
+
+        "FIELD_HEADER_NAME" : "Nom:",
+
+        "SECTION_HEADER_PARAMETERS" : "Paramètres"
+
+    },
+
     "MANAGE_USER" : {
 
         "ACTION_ACKNOWLEDGE"   : "@:APP.ACTION_ACKNOWLEDGE",
@@ -296,6 +310,7 @@
         "FIELD_HEADER_PORT"            : "Port:",
         "FIELD_HEADER_PRECONNECTION_BLOB" : "Pré-connexion BLOB (VM ID):",
         "FIELD_HEADER_PRECONNECTION_ID"   : "Source RDP ID:",
+        "FIELD_HEADER_READ_ONLY"       : "Lecture seule:",
         "FIELD_HEADER_REMOTE_APP_ARGS" : "Paramètres:",
         "FIELD_HEADER_REMOTE_APP_DIR"  : "Répertoire de travail:",
         "FIELD_HEADER_REMOTE_APP"      : "Programme:",
@@ -359,6 +374,7 @@
         "FIELD_HEADER_PASSPHRASE"  : "Phrase secrète:",
         "FIELD_HEADER_PORT"        : "Port:",
         "FIELD_HEADER_PRIVATE_KEY" : "Clé privée:",
+        "FIELD_HEADER_READ_ONLY"   : "Lecture seule:",
 
         "FIELD_OPTION_COLOR_SCHEME_BLACK_WHITE" : "Noir sur blanc",
         "FIELD_OPTION_COLOR_SCHEME_EMPTY"       : "",
@@ -402,6 +418,7 @@
         "FIELD_HEADER_PASSWORD"       : "Mot de passe:",
         "FIELD_HEADER_PASSWORD_REGEX" : "Expression régulière Mot de passe:",
         "FIELD_HEADER_PORT"           : "Port:",
+        "FIELD_HEADER_READ_ONLY"      : "Lecture seule:",
 
         "FIELD_OPTION_COLOR_SCHEME_BLACK_WHITE" : "Noir sur blanc",
         "FIELD_OPTION_COLOR_SCHEME_EMPTY"       : "",

@@ -58,7 +58,7 @@ angular.module('rest').factory('schemaService', ['$injector',
         return $http({
             cache   : cacheService.schema,
             method  : 'GET',
-            url     : 'api/schema/' + encodeURIComponent(dataSource) + '/users/attributes',
+            url     : 'api/session/data/' + encodeURIComponent(dataSource) + '/schema/userAttributes',
             params  : httpParameters
         });
 
@@ -92,7 +92,41 @@ angular.module('rest').factory('schemaService', ['$injector',
         return $http({
             cache   : cacheService.schema,
             method  : 'GET',
-            url     : 'api/schema/' + encodeURIComponent(dataSource) + '/connections/attributes',
+            url     : 'api/session/data/' + encodeURIComponent(dataSource) + '/schema/connectionAttributes',
+            params  : httpParameters
+        });
+
+    };
+
+    /**
+     * Makes a request to the REST API to get the list of available attributes
+     * for sharing profile objects, returning a promise that provides an array
+     * of @link{Form} objects if successful. Each element of the array describes
+     * a logical grouping of possible attributes.
+     *
+     * @param {String} dataSource
+     *     The unique identifier of the data source containing the sharing
+     *     profiles whose available attributes are to be retrieved. This
+     *     identifier corresponds to an AuthenticationProvider within the
+     *     Guacamole web application.
+     *
+     * @returns {Promise.<Form[]>}
+     *     A promise which will resolve with an array of @link{Form}
+     *     objects, where each @link{Form} describes a logical grouping of
+     *     possible attributes.
+     */
+    service.getSharingProfileAttributes = function getSharingProfileAttributes(dataSource) {
+
+        // Build HTTP parameters set
+        var httpParameters = {
+            token : authenticationService.getCurrentToken()
+        };
+
+        // Retrieve available sharing profile attributes
+        return $http({
+            cache   : cacheService.schema,
+            method  : 'GET',
+            url     : 'api/session/data/' + encodeURIComponent(dataSource) + '/schema/sharingProfileAttributes',
             params  : httpParameters
         });
 
@@ -126,7 +160,7 @@ angular.module('rest').factory('schemaService', ['$injector',
         return $http({
             cache   : cacheService.schema,
             method  : 'GET',
-            url     : 'api/schema/' + encodeURIComponent(dataSource) + '/connectionGroups/attributes',
+            url     : 'api/session/data/' + encodeURIComponent(dataSource) + '/schema/connectionGroupAttributes',
             params  : httpParameters
         });
 
@@ -157,7 +191,7 @@ angular.module('rest').factory('schemaService', ['$injector',
         return $http({
             cache   : cacheService.schema,
             method  : 'GET',
-            url     : 'api/schema/' + encodeURIComponent(dataSource) + '/protocols',
+            url     : 'api/session/data/' + encodeURIComponent(dataSource) + '/schema/protocols',
             params  : httpParameters
         });
 

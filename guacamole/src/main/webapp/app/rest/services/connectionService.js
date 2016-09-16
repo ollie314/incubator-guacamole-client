@@ -56,7 +56,7 @@ angular.module('rest').factory('connectionService', ['$injector',
         return $http({
             cache   : cacheService.connections,
             method  : 'GET',
-            url     : 'api/data/' + encodeURIComponent(dataSource) + '/connections/' + encodeURIComponent(id),
+            url     : 'api/session/data/' + encodeURIComponent(dataSource) + '/connections/' + encodeURIComponent(id),
             params  : httpParameters
         });
 
@@ -84,7 +84,7 @@ angular.module('rest').factory('connectionService', ['$injector',
         // Retrieve connection history
         return $http({
             method  : 'GET',
-            url     : 'api/data/' + encodeURIComponent(dataSource) + '/connections/' + encodeURIComponent(id) + '/history',
+            url     : 'api/session/data/' + encodeURIComponent(dataSource) + '/connections/' + encodeURIComponent(id) + '/history',
             params  : httpParameters
         });
  
@@ -113,7 +113,7 @@ angular.module('rest').factory('connectionService', ['$injector',
         return $http({
             cache   : cacheService.connections,
             method  : 'GET',
-            url     : 'api/data/' + encodeURIComponent(dataSource) + '/connections/' + encodeURIComponent(id) + '/parameters',
+            url     : 'api/session/data/' + encodeURIComponent(dataSource) + '/connections/' + encodeURIComponent(id) + '/parameters',
             params  : httpParameters
         });
  
@@ -143,7 +143,7 @@ angular.module('rest').factory('connectionService', ['$injector',
         if (!connection.identifier) {
             return $http({
                 method  : 'POST',
-                url     : 'api/data/' + encodeURIComponent(dataSource) + '/connections',
+                url     : 'api/session/data/' + encodeURIComponent(dataSource) + '/connections',
                 params  : httpParameters,
                 data    : connection
             })
@@ -152,6 +152,10 @@ angular.module('rest').factory('connectionService', ['$injector',
             .success(function connectionCreated(newConnection){
                 connection.identifier = newConnection.identifier;
                 cacheService.connections.removeAll();
+
+                // Clear users cache to force reload of permissions for this
+                // newly created connection
+                cacheService.users.removeAll();
             });
         }
 
@@ -159,7 +163,7 @@ angular.module('rest').factory('connectionService', ['$injector',
         else {
             return $http({
                 method  : 'PUT',
-                url     : 'api/data/' + encodeURIComponent(dataSource) + '/connections/' + encodeURIComponent(connection.identifier),
+                url     : 'api/session/data/' + encodeURIComponent(dataSource) + '/connections/' + encodeURIComponent(connection.identifier),
                 params  : httpParameters,
                 data    : connection
             })
@@ -167,6 +171,10 @@ angular.module('rest').factory('connectionService', ['$injector',
             // Clear the cache
             .success(function connectionUpdated(){
                 cacheService.connections.removeAll();
+
+                // Clear users cache to force reload of permissions for this
+                // newly updated connection
+                cacheService.users.removeAll();
             });
         }
 
@@ -192,7 +200,7 @@ angular.module('rest').factory('connectionService', ['$injector',
         // Delete connection
         return $http({
             method  : 'DELETE',
-            url     : 'api/data/' + encodeURIComponent(dataSource) + '/connections/' + encodeURIComponent(connection.identifier),
+            url     : 'api/session/data/' + encodeURIComponent(dataSource) + '/connections/' + encodeURIComponent(connection.identifier),
             params  : httpParameters
         })
 

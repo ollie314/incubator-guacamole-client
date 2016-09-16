@@ -38,8 +38,6 @@
 
         "INFO_ACTIVE_USER_COUNT" : "Op dit moment in gebruik door {USERS} {USERS, plural, one{gebruiker} other{gebruikers}}.",
 
-        "NAME" : "Guacamole ${project.version}",
-
         "TEXT_HISTORY_DURATION" : "{VALUE} {UNIT, select, second{{VALUE, plural, one{seconde} other{seconden}}} minute{{VALUE, plural, one{minuut} other{minuten}}} hour{{VALUE, plural, one{uur} other{uren}}} day{{VALUE, plural, one{dag} other{dagen}}} other{}}"
 
     },
@@ -233,6 +231,22 @@
 
     },
 
+    "MANAGE_SHARING_PROFILE" : {
+
+        "ACTION_ACKNOWLEDGE" : "@:APP.ACTION_ACKNOWLEDGE",
+        "ACTION_CANCEL"      : "@:APP.ACTION_CANCEL",
+        "ACTION_CLONE"       : "@:APP.ACTION_CLONE",
+        "ACTION_DELETE"      : "@:APP.ACTION_DELETE",
+        "ACTION_SAVE"        : "@:APP.ACTION_SAVE",
+
+        "DIALOG_HEADER_ERROR" : "@:APP.DIALOG_HEADER_ERROR",
+
+        "FIELD_HEADER_NAME" : "Naam:",
+
+        "SECTION_HEADER_PARAMETERS" : "Parameters"
+
+    },
+
     "MANAGE_USER" : {
 
         "ACTION_ACKNOWLEDGE"   : "@:APP.ACTION_ACKNOWLEDGE",
@@ -297,6 +311,7 @@
         "FIELD_HEADER_PORT"            : "Poort:",
         "FIELD_HEADER_PRECONNECTION_BLOB" : "Voor te bereiden BLOB (VM ID):",
         "FIELD_HEADER_PRECONNECTION_ID"   : "RDP bron ID:",
+        "FIELD_HEADER_READ_ONLY"      : "Alleen lezen:",
         "FIELD_HEADER_RECORDING_NAME" : "Opname naam:",
         "FIELD_HEADER_RECORDING_PATH" : "Opname map:",
         "FIELD_HEADER_RESIZE_METHOD" : "Schaal methode:",
@@ -371,6 +386,7 @@
         "FIELD_HEADER_PASSPHRASE"  : "Wachtwoordzin:",
         "FIELD_HEADER_PORT"        : "Poort:",
         "FIELD_HEADER_PRIVATE_KEY" : "Persoonlijke sleutel:",
+        "FIELD_HEADER_READ_ONLY"   : "Alleen lezen:",
         "FIELD_HEADER_RECORDING_NAME" : "Opname naam:",
         "FIELD_HEADER_RECORDING_PATH" : "Opname map:",
         "FIELD_HEADER_TYPESCRIPT_NAME" : "Typescript naam:",
@@ -422,6 +438,7 @@
         "FIELD_HEADER_PASSWORD"       : "Wachtwoord:",
         "FIELD_HEADER_PASSWORD_REGEX" : "Wachtwoord reguliere expressie:",
         "FIELD_HEADER_PORT"           : "Poort:",
+        "FIELD_HEADER_READ_ONLY"      : "Alleen lezen:",
         "FIELD_HEADER_RECORDING_NAME" : "Opname naam:",
         "FIELD_HEADER_RECORDING_PATH" : "Opname map:",
         "FIELD_HEADER_TYPESCRIPT_NAME" : "Typescript naam:",

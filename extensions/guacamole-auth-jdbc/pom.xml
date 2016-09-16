@@ -7,7 +7,7 @@
     <groupId>org.apache.guacamole</groupId>
     <artifactId>guacamole-auth-jdbc</artifactId>
     <packaging>pom</packaging>
-    <version>0.9.9-incubating</version>
+    <version>0.9.10-incubating</version>
     <name>guacamole-auth-jdbc</name>
     <url>http://guac-dev.org/</url>
 
@@ -16,6 +16,9 @@
     </properties>
 
     <modules>
+
+        <!-- Distribution .tar.gz -->
+        <module>modules/guacamole-auth-jdbc-dist</module>
 
         <!-- Base JDBC classes -->
         <module>modules/guacamole-auth-jdbc-base</module>
@@ -26,35 +29,6 @@
 
     </modules>
 
-    <build>
-        <plugins>
-
-            <!-- Assembly plugin - for easy distribution -->
-            <plugin>
-                <artifactId>maven-assembly-plugin</artifactId>
-                <version>2.5.3</version>
-                <inherited>false</inherited>
-                <executions>
-                    <execution>
-                        <id>make-dist-archive</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>single</goal>
-                        </goals>
-                        <configuration>
-                            <finalName>${project.artifactId}-${project.version}</finalName>
-                            <appendAssemblyId>false</appendAssemblyId>
-                            <descriptors>
-                                <descriptor>src/main/assembly/dist.xml</descriptor>
-                            </descriptors>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-
-        </plugins>
-    </build>
-
     <dependencyManagement>
         <dependencies>
 
@@ -62,7 +36,7 @@
             <dependency>
                 <groupId>org.apache.guacamole</groupId>
                 <artifactId>guacamole-ext</artifactId>
-                <version>0.9.9-incubating</version>
+                <version>0.9.10-incubating</version>
                 <scope>provided</scope>
             </dependency>
 

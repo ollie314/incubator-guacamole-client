@@ -34,6 +34,7 @@ import org.apache.guacamole.GuacamoleUnauthorizedException;
 import org.apache.guacamole.net.auth.credentials.GuacamoleInsufficientCredentialsException;
 import org.apache.guacamole.net.auth.credentials.GuacamoleInvalidCredentialsException;
 import org.apache.guacamole.rest.auth.AuthenticationService;
+import org.apache.guacamole.tunnel.GuacamoleStreamException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -171,6 +172,11 @@ public class RESTExceptionWrapper implements MethodInterceptor {
 
             }
 
+            // Rethrow unchecked exceptions such that they are properly wrapped
+            catch (RuntimeException e) {
+                throw new GuacamoleException(e.getMessage(), e);
+            }
+
         }
 
         // Additional credentials are needed
@@ -248,20 +254,39 @@ public class RESTExceptionWrapper implements MethodInterceptor {
 
         }
 
-        // All other errors
-        catch (GuacamoleException e) {
+        // Errors from intercepted streams
+        catch (GuacamoleStreamException e) {
 
             // Generate default message
             String message = e.getMessage();
             if (message == null)
-                message = "Unexpected server error.";
+                message = "Error reported by stream.";
 
-            // Ensure internal errors are logged at the debug level
+            throw new APIException(
+                e.getStatus(),
+                message
+            );
+
+        }
+
+        // All other errors
+        catch (GuacamoleException e) {
+
+            // Log all reasonable details of exception
+            String message = e.getMessage();
+            if (message != null)
+                logger.error("Unexpected internal error: {}", message);
+            else
+                logger.error("An internal error occurred, but did not contain "
+                           + "an error message. Enable debug-level logging for "
+                           + "details.");
+
+            // Ensure internal errors are fully logged at the debug level
             logger.debug("Unexpected exception in REST endpoint.", e);
 
             throw new APIException(
                 APIError.Type.INTERNAL_ERROR,
-                message
+                "Unexpected server error."
             );
 
         }

@@ -18,54 +18,47 @@
  */
 
 .user,
-.group,
+.connection-group,
 .connection {
     cursor: pointer;
 }
 
 .user a,
 .connection a,
-.group a {
+.connection-group a {
     text-decoration:none;
     color: black;
 }
 
 .user a:hover,
 .connection a:hover,
-.group a:hover {
+.connection-group a:hover {
     text-decoration:none;
     color: black;
 }
 
 .user a:visited,
 .connection a:visited,
-.group a:visited {
+.connection-group a:visited {
     text-decoration:none;
     color: black;
 }
 
-.connection:hover {
+.recent-connections .connection:hover {
     background: #CDA;
 }
 
-.connection .thumbnail {
+.recent-connections .connection .thumbnail {
+    display: block;
     margin: 0.5em;
 }
 
-.connection .thumbnail > * {
+.recent-connections .connection .thumbnail > * {
     border: 1px solid black;
     background: black;
     box-shadow: 1px 1px 5px black;
     max-width: 75%;
     display: inline-block;
-}
-
-div.recent-connections .connection .thumbnail {
-    display: block;
-}
-
-div.recent-connections .protocol {
-    display: none;
 }
 
 .caption * {

@@ -20,10 +20,12 @@
 package org.apache.guacamole.auth.jdbc.tunnel;
 
 import java.util.Collection;
-import org.apache.guacamole.auth.jdbc.user.AuthenticatedUser;
+import org.apache.guacamole.auth.jdbc.user.ModeledAuthenticatedUser;
 import org.apache.guacamole.auth.jdbc.connection.ModeledConnection;
 import org.apache.guacamole.auth.jdbc.connectiongroup.ModeledConnectionGroup;
 import org.apache.guacamole.GuacamoleException;
+import org.apache.guacamole.auth.jdbc.sharing.connection.SharedConnectionDefinition;
+import org.apache.guacamole.auth.jdbc.user.RemoteAuthenticatedUser;
 import org.apache.guacamole.net.GuacamoleTunnel;
 import org.apache.guacamole.net.auth.Connection;
 import org.apache.guacamole.net.auth.ConnectionGroup;
@@ -53,7 +55,7 @@ public interface GuacamoleTunnelService {
      *     If an error occurs while retrieving all active connections, or if
      *     permission is denied.
      */
-    public Collection<ActiveConnectionRecord> getActiveConnections(AuthenticatedUser user)
+    public Collection<ActiveConnectionRecord> getActiveConnections(ModeledAuthenticatedUser user)
             throws GuacamoleException;
 
     /**
@@ -81,7 +83,7 @@ public interface GuacamoleTunnelService {
      *     If the connection cannot be established due to concurrent usage
      *     rules.
      */
-    GuacamoleTunnel getGuacamoleTunnel(AuthenticatedUser user,
+    GuacamoleTunnel getGuacamoleTunnel(ModeledAuthenticatedUser user,
             ModeledConnection connection, GuacamoleClientInformation info)
             throws GuacamoleException;
 
@@ -125,7 +127,7 @@ public interface GuacamoleTunnelService {
      *     If the connection cannot be established due to concurrent usage
      *     rules, or if the connection group is not balancing.
      */
-    GuacamoleTunnel getGuacamoleTunnel(AuthenticatedUser user,
+    GuacamoleTunnel getGuacamoleTunnel(ModeledAuthenticatedUser user,
             ModeledConnectionGroup connectionGroup,
             GuacamoleClientInformation info)
             throws GuacamoleException;
@@ -144,5 +146,36 @@ public interface GuacamoleTunnelService {
      *     currently-active connections.
      */
     public Collection<ActiveConnectionRecord> getActiveConnections(ConnectionGroup connectionGroup);
+
+    /**
+     * Creates a socket for the given user which joins the given active
+     * connection. The given client information will be passed to guacd when
+     * the connection is established. This function will apply any concurrent
+     * usage rules in effect, but will NOT test object- or system-level
+     * permissions.
+     *
+     * @param user
+     *     The user for whom the connection is being established.
+     *
+     * @param definition
+     *     The SharedConnectionDefinition dictating the connection being shared
+     *     and any associated restrictions.
+     *
+     * @param info
+     *     Information describing the Guacamole client connecting to the given
+     *     connection.
+     *
+     * @return
+     *     A new GuacamoleTunnel which is configured and connected to the given
+     *     active connection.
+     *
+     * @throws GuacamoleException
+     *     If the connection cannot be established due to concurrent usage
+     *     rules.
+     */
+    GuacamoleTunnel getGuacamoleTunnel(RemoteAuthenticatedUser user,
+            SharedConnectionDefinition definition,
+            GuacamoleClientInformation info)
+            throws GuacamoleException;
 
 }

@@ -36,6 +36,7 @@ import org.apache.guacamole.io.GuacamoleWriter;
 import org.apache.guacamole.net.GuacamoleTunnel;
 import org.apache.guacamole.GuacamoleClientException;
 import org.apache.guacamole.GuacamoleConnectionClosedException;
+import org.apache.guacamole.protocol.GuacamoleInstruction;
 import org.apache.guacamole.protocol.GuacamoleStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -149,6 +150,12 @@ public abstract class GuacamoleWebSocketTunnelEndpoint extends Endpoint {
 
                 try {
 
+                    // Send tunnel UUID
+                    remote.sendText(new GuacamoleInstruction(
+                        GuacamoleTunnel.INTERNAL_DATA_OPCODE,
+                        tunnel.getUUID().toString()
+                    ).toString());
+
                     try {
 
                         // Attempt to read
@@ -191,6 +198,7 @@ public abstract class GuacamoleWebSocketTunnelEndpoint extends Endpoint {
                 }
                 catch (IOException e) {
                     logger.debug("I/O error prevents further reads.", e);
+                    closeConnection(session, GuacamoleStatus.SERVER_ERROR);
                 }
 
             }

@@ -19,15 +19,9 @@
 
 package org.apache.guacamole.auth.mysql;
 
-import com.google.inject.Guice;
-import com.google.inject.Injector;
 import org.apache.guacamole.GuacamoleException;
-import org.apache.guacamole.net.auth.AuthenticationProvider;
-import org.apache.guacamole.net.auth.Credentials;
-import org.apache.guacamole.net.auth.UserContext;
-import org.apache.guacamole.auth.jdbc.JDBCAuthenticationProviderModule;
-import org.apache.guacamole.auth.jdbc.user.AuthenticationProviderService;
-import org.apache.guacamole.net.auth.AuthenticatedUser;
+import org.apache.guacamole.auth.jdbc.InjectedAuthenticationProvider;
+import org.apache.guacamole.auth.jdbc.JDBCAuthenticationProviderService;
 
 /**
  * Provides a MySQL based implementation of the AuthenticationProvider
@@ -36,13 +30,7 @@ import org.apache.guacamole.net.auth.AuthenticatedUser;
  * @author James Muehlner
  * @author Michael Jumper
  */
-public class MySQLAuthenticationProvider implements AuthenticationProvider {
-
-    /**
-     * Injector which will manage the object graph of this authentication
-     * provider.
-     */
-    private final Injector injector;
+public class MySQLAuthenticationProvider extends InjectedAuthenticationProvider {
 
     /**
      * Creates a new MySQLAuthenticationProvider that reads and writes
@@ -54,64 +42,12 @@ public class MySQLAuthenticationProvider implements AuthenticationProvider {
      *     a property.
      */
     public MySQLAuthenticationProvider() throws GuacamoleException {
-
-        // Get local environment
-        MySQLEnvironment environment = new MySQLEnvironment();
-
-        // Set up Guice injector.
-        injector = Guice.createInjector(
-
-            // Configure MySQL-specific authentication
-            new MySQLAuthenticationProviderModule(environment),
-
-            // Configure JDBC authentication core
-            new JDBCAuthenticationProviderModule(this, environment)
-
-        );
-
+        super(new MySQLInjectorProvider(), JDBCAuthenticationProviderService.class);
     }
 
     @Override
     public String getIdentifier() {
         return "mysql";
-    }
-
-    @Override
-    public AuthenticatedUser authenticateUser(Credentials credentials)
-            throws GuacamoleException {
-
-        // Create AuthenticatedUser based on credentials, if valid
-        AuthenticationProviderService authProviderService = injector.getInstance(AuthenticationProviderService.class);
-        return authProviderService.authenticateUser(this, credentials);
-
-    }
-
-    @Override
-    public AuthenticatedUser updateAuthenticatedUser(AuthenticatedUser authenticatedUser,
-            Credentials credentials) throws GuacamoleException {
-
-        // No need to update authenticated users
-        return authenticatedUser;
-
-    }
-
-    @Override
-    public UserContext getUserContext(AuthenticatedUser authenticatedUser)
-            throws GuacamoleException {
-
-        // Create UserContext based on credentials, if valid
-        AuthenticationProviderService authProviderService = injector.getInstance(AuthenticationProviderService.class);
-        return authProviderService.getUserContext(authenticatedUser);
-
-    }
-
-    @Override
-    public UserContext updateUserContext(UserContext context,
-            AuthenticatedUser authenticatedUser) throws GuacamoleException {
-
-        // No need to update the context
-        return context;
-
     }
 
 }

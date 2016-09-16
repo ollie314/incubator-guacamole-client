@@ -29,7 +29,26 @@ var Guacamole = Guacamole || {};
  */
 Guacamole.AudioRecorder = function AudioRecorder() {
 
-    // AudioRecorder currently provides no functions
+    /**
+     * Callback which is invoked when the audio recording process has stopped
+     * and the underlying Guacamole stream has been closed normally. Audio will
+     * only resume recording if a new Guacamole.AudioRecorder is started. This
+     * Guacamole.AudioRecorder instance MAY NOT be reused.
+     *
+     * @event
+     */
+    this.onclose = null;
+
+    /**
+     * Callback which is invoked when the audio recording process cannot
+     * continue due to an error, if it has started at all. The underlying
+     * Guacamole stream is automatically closed. Future attempts to record
+     * audio should not be made, and this Guacamole.AudioRecorder instance
+     * MAY NOT be reused.
+     *
+     * @event
+     */
+    this.onerror = null;
 
 };
 
@@ -115,6 +134,14 @@ Guacamole.AudioRecorder.getInstance = function getInstance(stream, mimetype) {
 Guacamole.RawAudioRecorder = function RawAudioRecorder(stream, mimetype) {
 
     /**
+     * Reference to this RawAudioRecorder.
+     *
+     * @private
+     * @type {Guacamole.RawAudioRecorder}
+     */
+    var recorder = this;
+
+    /**
      * The size of audio buffer to request from the Web Audio API when
      * recording or processing audio, in sample-frames. This must be a power of
      * two between 256 and 16384 inclusive, as required by
@@ -124,7 +151,18 @@ Guacamole.RawAudioRecorder = function RawAudioRecorder(stream, mimetype) {
      * @constant
      * @type {Number}
      */
-    var BUFFER_SIZE = 512;
+    var BUFFER_SIZE = 2048;
+
+    /**
+     * The window size to use when applying Lanczos interpolation, commonly
+     * denoted by the variable "a".
+     * See: https://en.wikipedia.org/wiki/Lanczos_resampling
+     *
+     * @private
+     * @contant
+     * @type Number
+     */
+    var LANCZOS_WINDOW_SIZE = 3;
 
     /**
      * The format of audio this recorder will encode.
@@ -184,6 +222,141 @@ Guacamole.RawAudioRecorder = function RawAudioRecorder(stream, mimetype) {
     var maxSampleValue = (format.bytesPerSample === 1) ? 128 : 32768;
 
     /**
+     * The total number of audio samples read from the local audio input device
+     * over the life of this audio recorder.
+     *
+     * @private
+     * @type {Number}
+     */
+    var readSamples = 0;
+
+    /**
+     * The total number of audio samples written to the underlying Guacamole
+     * connection over the life of this audio recorder.
+     *
+     * @private
+     * @type {Number}
+     */
+    var writtenSamples = 0;
+
+    /**
+     * The audio stream provided by the browser, if allowed. If no stream has
+     * yet been received, this will be null.
+     *
+     * @type MediaStream
+     */
+    var mediaStream = null;
+
+    /**
+     * The source node providing access to the local audio input device.
+     *
+     * @private
+     * @type {MediaStreamAudioSourceNode}
+     */
+    var source = null;
+
+    /**
+     * The script processing node which receives audio input from the media
+     * stream source node as individual audio buffers.
+     *
+     * @private
+     * @type {ScriptProcessorNode}
+     */
+    var processor = null;
+
+    /**
+     * The normalized sinc function. The normalized sinc function is defined as
+     * 1 for x=0 and sin(PI * x) / (PI * x) for all other values of x.
+     *
+     * See: https://en.wikipedia.org/wiki/Sinc_function
+     *
+     * @private
+     * @param {Number} x
+     *     The point at which the normalized sinc function should be computed.
+     *
+     * @returns {Number}
+     *     The value of the normalized sinc function at x.
+     */
+    var sinc = function sinc(x) {
+
+        // The value of sinc(0) is defined as 1
+        if (x === 0)
+            return 1;
+
+        // Otherwise, normlized sinc(x) is sin(PI * x) / (PI * x)
+        var piX = Math.PI * x;
+        return Math.sin(piX) / piX;
+
+    };
+
+    /**
+     * Calculates the value of the Lanczos kernal at point x for a given window
+     * size. See: https://en.wikipedia.org/wiki/Lanczos_resampling
+     *
+     * @private
+     * @param {Number} x
+     *     The point at which the value of the Lanczos kernel should be
+     *     computed.
+     *
+     * @param {Number} a
+     *     The window size to use for the Lanczos kernel.
+     *
+     * @returns {Number}
+     *     The value of the Lanczos kernel at the given point for the given
+     *     window size.
+     */
+    var lanczos = function lanczos(x, a) {
+
+        // Lanczos is sinc(x) * sinc(x / a) for -a < x < a ...
+        if (-a < x && x < a)
+            return sinc(x) * sinc(x / a);
+
+        // ... and 0 otherwise
+        return 0;
+
+    };
+
+    /**
+     * Determines the value of the waveform represented by the audio data at
+     * the given location. If the value cannot be determined exactly as it does
+     * not correspond to an exact sample within the audio data, the value will
+     * be derived through interpolating nearby samples.
+     *
+     * @private
+     * @param {Float32Array} audioData
+     *     An array of audio data, as returned by AudioBuffer.getChannelData().
+     *
+     * @param {Number} t
+     *     The relative location within the waveform from which the value
+     *     should be retrieved, represented as a floating point number between
+     *     0 and 1 inclusive, where 0 represents the earliest point in time and
+     *     1 represents the latest.
+     *
+     * @returns {Number}
+     *     The value of the waveform at the given location.
+     */
+    var interpolateSample = function getValueAt(audioData, t) {
+
+        // Convert [0, 1] range to [0, audioData.length - 1]
+        var index = (audioData.length - 1) * t;
+
+        // Determine the start and end points for the summation used by the
+        // Lanczos interpolation algorithm (see: https://en.wikipedia.org/wiki/Lanczos_resampling)
+        var start = Math.floor(index) - LANCZOS_WINDOW_SIZE + 1;
+        var end = Math.floor(index) + LANCZOS_WINDOW_SIZE;
+
+        // Calculate the value of the Lanczos interpolation function for the
+        // required range
+        var sum = 0;
+        for (var i = start; i <= end; i++) {
+            sum += (audioData[i] || 0) * lanczos(index - i, LANCZOS_WINDOW_SIZE);
+        }
+
+        return sum;
+
+    };
+
+    /**
      * Converts the given AudioBuffer into an audio packet, ready for streaming
      * along the underlying output stream. Unlike the raw audio packets used by
      * this audio recorder, AudioBuffers require floating point samples and are
@@ -200,9 +373,18 @@ Guacamole.RawAudioRecorder = function RawAudioRecorder(stream, mimetype) {
      */
     var toSampleArray = function toSampleArray(audioBuffer) {
 
-        // Calculate the number of samples in both input and output
+        // Track overall amount of data read
         var inSamples = audioBuffer.length;
-        var outSamples = Math.floor(audioBuffer.duration * format.rate);
+        readSamples += inSamples;
+
+        // Calculate the total number of samples that should be written as of
+        // the audio data just received and adjust the size of the output
+        // packet accordingly
+        var expectedWrittenSamples = Math.round(readSamples * format.rate / audioBuffer.sampleRate);
+        var outSamples = expectedWrittenSamples - writtenSamples;
+
+        // Update number of samples written
+        writtenSamples += outSamples;
 
         // Get array for raw PCM storage
         var data = new SampleArray(outSamples * format.channels);
@@ -215,13 +397,8 @@ Guacamole.RawAudioRecorder = function RawAudioRecorder(stream, mimetype) {
             // Fill array with data from audio buffer channel
             var offset = channel;
             for (var i = 0; i < outSamples; i++) {
-
-                // Apply naiive resampling
-                var inOffset = Math.floor(i / outSamples * inSamples);
-                data[offset] = Math.floor(audioData[inOffset] * maxSampleValue);
-
+                data[offset] = interpolateSample(audioData, i / (outSamples - 1)) * maxSampleValue;
                 offset += format.channels;
-
             }
 
         }
@@ -230,20 +407,22 @@ Guacamole.RawAudioRecorder = function RawAudioRecorder(stream, mimetype) {
 
     };
 
-    // Once audio stream is successfully open, request and begin reading audio
-    writer.onack = function audioStreamAcknowledged(status) {
-
-        // Abort stream if rejected
-        if (status.code !== Guacamole.Status.Code.SUCCESS) {
-            writer.sendEnd();
-            return;
-        }
+    /**
+     * Requests access to the user's microphone and begins capturing audio. All
+     * received audio data is resampled as necessary and forwarded to the
+     * Guacamole stream underlying this Guacamole.RawAudioRecorder. This
+     * function must be invoked ONLY ONCE per instance of
+     * Guacamole.RawAudioRecorder.
+     *
+     * @private
+     */
+    var beginAudioCapture = function beginAudioCapture() {
 
         // Attempt to retrieve an audio input stream from the browser
-        getUserMedia({ 'audio' : true }, function streamReceived(mediaStream) {
+        getUserMedia({ 'audio' : true }, function streamReceived(stream) {
 
             // Create processing node which receives appropriately-sized audio buffers
-            var processor = context.createScriptProcessor(BUFFER_SIZE, format.channels, format.channels);
+            processor = context.createScriptProcessor(BUFFER_SIZE, format.channels, format.channels);
             processor.connect(context.destination);
 
             // Send blobs when audio buffers are received
@@ -252,15 +431,86 @@ Guacamole.RawAudioRecorder = function RawAudioRecorder(stream, mimetype) {
             };
 
             // Connect processing node to user's audio input source
-            var source = context.createMediaStreamSource(mediaStream);
+            source = context.createMediaStreamSource(stream);
             source.connect(processor);
+
+            // Save stream for later cleanup
+            mediaStream = stream;
 
         }, function streamDenied() {
 
             // Simply end stream if audio access is not allowed
             writer.sendEnd();
 
+            // Notify of closure
+            if (recorder.onerror)
+                recorder.onerror();
+
         });
+
+    };
+
+    /**
+     * Stops capturing audio, if the capture has started, freeing all associated
+     * resources. If the capture has not started, this function simply ends the
+     * underlying Guacamole stream.
+     *
+     * @private
+     */
+    var stopAudioCapture = function stopAudioCapture() {
+
+        // Disconnect media source node from script processor
+        if (source)
+            source.disconnect();
+
+        // Disconnect associated script processor node
+        if (processor)
+            processor.disconnect();
+
+        // Stop capture
+        if (mediaStream) {
+            var tracks = mediaStream.getTracks();
+            for (var i = 0; i < tracks.length; i++)
+                tracks[i].stop();
+        }
+
+        // Remove references to now-unneeded components
+        processor = null;
+        source = null;
+        mediaStream = null;
+
+        // End stream
+        writer.sendEnd();
+
+    };
+
+    // Once audio stream is successfully open, request and begin reading audio
+    writer.onack = function audioStreamAcknowledged(status) {
+
+        // Begin capture if successful response and not yet started
+        if (status.code === Guacamole.Status.Code.SUCCESS && !mediaStream)
+            beginAudioCapture();
+
+        // Otherwise stop capture and cease handling any further acks
+        else {
+
+            // Stop capturing audio
+            stopAudioCapture();
+            writer.onack = null;
+
+            // Notify if stream has closed normally
+            if (status.code === Guacamole.Status.Code.RESOURCE_CLOSED) {
+                if (recorder.onclose)
+                    recorder.onclose();
+            }
+
+            // Otherwise notify of closure due to error
+            else {
+                if (recorder.onerror)
+                    recorder.onerror();
+            }
+
+        }
 
     };
 

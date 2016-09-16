@@ -47,7 +47,7 @@
     <h2 class="header">{{'MANAGE_CONNECTION.SECTION_HEADER_PARAMETERS' | translate}}</h2>
     <div class="section connection-parameters" ng-class="{loading: !parameters}">
         <guac-form namespace="getNamespace(connection.protocol)"
-                   content="protocols[connection.protocol].forms"
+                   content="protocols[connection.protocol].connectionForms"
                    model="parameters"></guac-form>
     </div>
 
@@ -75,7 +75,7 @@
             </thead>
             <tbody>
                 <tr ng-repeat="wrapper in wrapperPage">
-                    <td class="username">{{wrapper.entry.username}}</td>
+                    <td class="username"><guac-user-item username="wrapper.entry.username"></guac-user-item></td>
                     <td class="start">{{wrapper.entry.startDate | date:historyDateFormat}}</td>
                     <td class="duration"
                         translate="{{wrapper.durationText}}"

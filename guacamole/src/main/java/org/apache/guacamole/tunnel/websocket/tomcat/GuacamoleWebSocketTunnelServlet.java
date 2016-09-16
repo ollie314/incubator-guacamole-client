@@ -35,6 +35,7 @@ import org.apache.catalina.websocket.WebSocketServlet;
 import org.apache.catalina.websocket.WsOutbound;
 import org.apache.guacamole.GuacamoleClientException;
 import org.apache.guacamole.GuacamoleConnectionClosedException;
+import org.apache.guacamole.protocol.GuacamoleInstruction;
 import org.apache.guacamole.tunnel.http.HTTPTunnelRequest;
 import org.apache.guacamole.tunnel.TunnelRequest;
 import org.apache.guacamole.protocol.GuacamoleStatus;
@@ -164,6 +165,12 @@ public abstract class GuacamoleWebSocketTunnelServlet extends WebSocketServlet {
 
                         try {
 
+                            // Send tunnel UUID
+                            outbound.writeTextMessage(CharBuffer.wrap(new GuacamoleInstruction(
+                                GuacamoleTunnel.INTERNAL_DATA_OPCODE,
+                                tunnel.getUUID().toString()
+                            ).toString()));
+
                             try {
 
                                 // Attempt to read
@@ -206,6 +213,7 @@ public abstract class GuacamoleWebSocketTunnelServlet extends WebSocketServlet {
                         }
                         catch (IOException e) {
                             logger.debug("I/O error prevents further reads.", e);
+                            closeConnection(outbound, GuacamoleStatus.SERVER_ERROR);
                         }
 
                     }

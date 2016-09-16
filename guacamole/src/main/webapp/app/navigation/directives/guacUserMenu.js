@@ -40,35 +40,14 @@ angular.module('navigation').directive('guacUserMenu', [function guacUserMenu() 
         },
 
         templateUrl: 'app/navigation/templates/guacUserMenu.html',
-        controller: ['$scope', '$injector', '$element', function guacUserMenuController($scope, $injector, $element) {
+        controller: ['$scope', '$injector',
+            function guacUserMenuController($scope, $injector) {
 
             // Get required services
-            var $document             = $injector.get('$document');
             var $location             = $injector.get('$location');
             var $route                = $injector.get('$route');
             var authenticationService = $injector.get('authenticationService');
             var userPageService       = $injector.get('userPageService');
-
-            /**
-             * The outermost element of the user menu directive.
-             *
-             * @type Element
-             */
-            var element = $element[0];
-
-            /**
-             * The main document object.
-             *
-             * @type Document
-             */
-            var document = $document[0];
-
-            /**
-             * Whether the contents of the user menu are currently shown.
-             *
-             * @type Boolean
-             */
-            $scope.menuShown = false;
 
             /**
              * The username of the current user.
@@ -89,12 +68,16 @@ angular.module('navigation').directive('guacUserMenu', [function guacUserMenu() 
             .then(function retrievedMainPages(pages) {
                 $scope.pages = pages;
             });
-            
+
             /**
-             * Toggles visibility of the user menu.
+             * Returns whether the current user has authenticated anonymously.
+             *
+             * @returns {Boolean}
+             *     true if the current user has authenticated anonymously, false
+             *     otherwise.
              */
-            $scope.toggleMenu = function toggleMenu() {
-                $scope.menuShown = !$scope.menuShown;
+            $scope.isAnonymous = function isAnonymous() {
+                return authenticationService.isAnonymous();
             };
 
             /**
@@ -124,18 +107,6 @@ angular.module('navigation').directive('guacUserMenu', [function guacUserMenu() 
              * All available actions for the current user.
              */
             $scope.actions = [ LOGOUT_ACTION ];
-
-            // Close menu when use clicks anywhere else
-            document.body.addEventListener('click', function clickOutsideMenu() {
-                $scope.$apply(function closeMenu() {
-                    $scope.menuShown = false;
-                });
-            }, false);
-
-            // Prevent click within menu from triggering the outside-menu handler
-            element.addEventListener('click', function clickInsideMenu(e) {
-                e.stopPropagation();
-            }, false);
 
         }] // end controller
 

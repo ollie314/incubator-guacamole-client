@@ -1,12 +1,21 @@
 {
 
-    "guacamoleVersion" : "0.9.9-incubating",
+    "guacamoleVersion" : "0.9.10-incubating",
 
     "name"      : "PostgreSQL Authentication",
     "namespace" : "guac-postgresql",
 
     "authProviders" : [
-        "org.apache.guacamole.auth.postgresql.PostgreSQLAuthenticationProvider"
+        "org.apache.guacamole.auth.postgresql.PostgreSQLAuthenticationProvider",
+        "org.apache.guacamole.auth.postgresql.PostgreSQLSharedAuthenticationProvider"
+    ],
+
+    "css" : [
+        "styles/jdbc.css"
+    ],
+
+    "html" : [
+        "html/shared-connection.html"
     ],
 
     "translations" : [

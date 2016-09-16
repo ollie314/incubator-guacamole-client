@@ -28,13 +28,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import org.apache.guacamole.auth.jdbc.user.AuthenticatedUser;
+import org.apache.guacamole.auth.jdbc.user.ModeledAuthenticatedUser;
 import org.apache.guacamole.auth.jdbc.base.ModeledDirectoryObjectMapper;
 import org.apache.guacamole.auth.jdbc.tunnel.GuacamoleTunnelService;
 import org.apache.guacamole.GuacamoleClientException;
 import org.apache.guacamole.GuacamoleException;
 import org.apache.guacamole.GuacamoleSecurityException;
-import org.apache.guacamole.auth.jdbc.base.ModeledGroupedDirectoryObjectService;
+import org.apache.guacamole.auth.jdbc.base.ModeledChildDirectoryObjectService;
 import org.apache.guacamole.auth.jdbc.permission.ConnectionPermissionMapper;
 import org.apache.guacamole.auth.jdbc.permission.ObjectPermissionMapper;
 import org.apache.guacamole.net.GuacamoleTunnel;
@@ -52,7 +52,7 @@ import org.apache.guacamole.protocol.GuacamoleClientInformation;
  *
  * @author Michael Jumper, James Muehlner
  */
-public class ConnectionService extends ModeledGroupedDirectoryObjectService<ModeledConnection, Connection, ConnectionModel> {
+public class ConnectionService extends ModeledChildDirectoryObjectService<ModeledConnection, Connection, ConnectionModel> {
 
     /**
      * Mapper for accessing connections.
@@ -70,7 +70,7 @@ public class ConnectionService extends ModeledGroupedDirectoryObjectService<Mode
      * Mapper for accessing connection parameters.
      */
     @Inject
-    private ParameterMapper parameterMapper;
+    private ConnectionParameterMapper parameterMapper;
 
     /**
      * Mapper for accessing connection history.
@@ -101,7 +101,7 @@ public class ConnectionService extends ModeledGroupedDirectoryObjectService<Mode
     }
 
     @Override
-    protected ModeledConnection getObjectInstance(AuthenticatedUser currentUser,
+    protected ModeledConnection getObjectInstance(ModeledAuthenticatedUser currentUser,
             ConnectionModel model) {
         ModeledConnection connection = connectionProvider.get();
         connection.init(currentUser, model);
@@ -109,7 +109,7 @@ public class ConnectionService extends ModeledGroupedDirectoryObjectService<Mode
     }
 
     @Override
-    protected ConnectionModel getModelInstance(AuthenticatedUser currentUser,
+    protected ConnectionModel getModelInstance(ModeledAuthenticatedUser currentUser,
             final Connection object) {
 
         // Create new ModeledConnection backed by blank model
@@ -127,7 +127,7 @@ public class ConnectionService extends ModeledGroupedDirectoryObjectService<Mode
     }
 
     @Override
-    protected boolean hasCreatePermission(AuthenticatedUser user)
+    protected boolean hasCreatePermission(ModeledAuthenticatedUser user)
             throws GuacamoleException {
 
         // Return whether user has explicit connection creation permission
@@ -137,7 +137,7 @@ public class ConnectionService extends ModeledGroupedDirectoryObjectService<Mode
     }
 
     @Override
-    protected ObjectPermissionSet getPermissionSet(AuthenticatedUser user)
+    protected ObjectPermissionSet getPermissionSet(ModeledAuthenticatedUser user)
             throws GuacamoleException {
 
         // Return permissions related to connections 
@@ -146,7 +146,16 @@ public class ConnectionService extends ModeledGroupedDirectoryObjectService<Mode
     }
 
     @Override
-    protected void beforeCreate(AuthenticatedUser user,
+    protected ObjectPermissionSet getParentPermissionSet(ModeledAuthenticatedUser user)
+            throws GuacamoleException {
+
+        // Connections are contained by connection groups
+        return user.getUser().getConnectionGroupPermissions();
+
+    }
+
+    @Override
+    protected void beforeCreate(ModeledAuthenticatedUser user,
             ConnectionModel model) throws GuacamoleException {
 
         super.beforeCreate(user, model);
@@ -163,7 +172,7 @@ public class ConnectionService extends ModeledGroupedDirectoryObjectService<Mode
     }
 
     @Override
-    protected void beforeUpdate(AuthenticatedUser user,
+    protected void beforeUpdate(ModeledAuthenticatedUser user,
             ConnectionModel model) throws GuacamoleException {
 
         super.beforeUpdate(user, model);
@@ -197,12 +206,12 @@ public class ConnectionService extends ModeledGroupedDirectoryObjectService<Mode
      *     A collection of parameter models containing the name/value pairs
      *     of the given connection's parameters.
      */
-    private Collection<ParameterModel> getParameterModels(ModeledConnection connection) {
+    private Collection<ConnectionParameterModel> getParameterModels(ModeledConnection connection) {
 
         Map<String, String> parameters = connection.getConfiguration().getParameters();
         
         // Convert parameters to model objects
-        Collection<ParameterModel> parameterModels = new ArrayList<ParameterModel>(parameters.size());
+        Collection<ConnectionParameterModel> parameterModels = new ArrayList<ConnectionParameterModel>(parameters.size());
         for (Map.Entry<String, String> parameterEntry : parameters.entrySet()) {
 
             // Get parameter name and value
@@ -214,7 +223,7 @@ public class ConnectionService extends ModeledGroupedDirectoryObjectService<Mode
                 continue;
             
             // Produce model object from parameter
-            ParameterModel model = new ParameterModel();
+            ConnectionParameterModel model = new ConnectionParameterModel();
             model.setConnectionIdentifier(connection.getIdentifier());
             model.setName(name);
             model.setValue(value);
@@ -229,7 +238,7 @@ public class ConnectionService extends ModeledGroupedDirectoryObjectService<Mode
     }
 
     @Override
-    public ModeledConnection createObject(AuthenticatedUser user, Connection object)
+    public ModeledConnection createObject(ModeledAuthenticatedUser user, Connection object)
             throws GuacamoleException {
 
         // Create connection
@@ -237,7 +246,7 @@ public class ConnectionService extends ModeledGroupedDirectoryObjectService<Mode
         connection.setConfiguration(object.getConfiguration());
 
         // Insert new parameters, if any
-        Collection<ParameterModel> parameterModels = getParameterModels(connection);
+        Collection<ConnectionParameterModel> parameterModels = getParameterModels(connection);
         if (!parameterModels.isEmpty())
             parameterMapper.insert(parameterModels);
 
@@ -246,14 +255,14 @@ public class ConnectionService extends ModeledGroupedDirectoryObjectService<Mode
     }
     
     @Override
-    public void updateObject(AuthenticatedUser user, ModeledConnection object)
+    public void updateObject(ModeledAuthenticatedUser user, ModeledConnection object)
             throws GuacamoleException {
 
         // Update connection
         super.updateObject(user, object);
 
         // Replace existing parameters with new parameters, if any
-        Collection<ParameterModel> parameterModels = getParameterModels(object);
+        Collection<ConnectionParameterModel> parameterModels = getParameterModels(object);
         parameterMapper.delete(object.getIdentifier());
         if (!parameterModels.isEmpty())
             parameterMapper.insert(parameterModels);
@@ -282,7 +291,7 @@ public class ConnectionService extends ModeledGroupedDirectoryObjectService<Mode
      * @throws GuacamoleException
      *     If an error occurs while reading identifiers.
      */
-    public Set<String> getIdentifiersWithin(AuthenticatedUser user,
+    public Set<String> getIdentifiersWithin(ModeledAuthenticatedUser user,
             String identifier)
             throws GuacamoleException {
 
@@ -313,7 +322,7 @@ public class ConnectionService extends ModeledGroupedDirectoryObjectService<Mode
      *     A new map of all parameter name/value pairs that the given user has
      *     access to.
      */
-    public Map<String, String> retrieveParameters(AuthenticatedUser user,
+    public Map<String, String> retrieveParameters(ModeledAuthenticatedUser user,
             String identifier) {
 
         Map<String, String> parameterMap = new HashMap<String, String>();
@@ -332,7 +341,7 @@ public class ConnectionService extends ModeledGroupedDirectoryObjectService<Mode
 
         // Populate parameter map if we have permission to do so
         if (canRetrieveParameters) {
-            for (ParameterModel parameter : parameterMapper.select(identifier))
+            for (ConnectionParameterModel parameter : parameterMapper.select(identifier))
                 parameterMap.put(parameter.getName(), parameter.getValue());
         }
 
@@ -394,7 +403,7 @@ public class ConnectionService extends ModeledGroupedDirectoryObjectService<Mode
      * @throws GuacamoleException
      *     If permission to read the connection history is denied.
      */
-    public List<ConnectionRecord> retrieveHistory(AuthenticatedUser user,
+    public List<ConnectionRecord> retrieveHistory(ModeledAuthenticatedUser user,
             ModeledConnection connection) throws GuacamoleException {
 
         String identifier = connection.getIdentifier();
@@ -450,7 +459,7 @@ public class ConnectionService extends ModeledGroupedDirectoryObjectService<Mode
      * @throws GuacamoleException
      *     If permission to read the connection history is denied.
      */
-    public List<ConnectionRecord> retrieveHistory(AuthenticatedUser user,
+    public List<ConnectionRecord> retrieveHistory(ModeledAuthenticatedUser user,
             Collection<ConnectionRecordSearchTerm> requiredContents,
             List<ConnectionRecordSortPredicate> sortPredicates, int limit)
             throws GuacamoleException {
@@ -492,7 +501,7 @@ public class ConnectionService extends ModeledGroupedDirectoryObjectService<Mode
      * @throws GuacamoleException
      *     If permission to connect to this connection is denied.
      */
-    public GuacamoleTunnel connect(AuthenticatedUser user,
+    public GuacamoleTunnel connect(ModeledAuthenticatedUser user,
             ModeledConnection connection, GuacamoleClientInformation info)
             throws GuacamoleException {
 

@@ -26,6 +26,7 @@
 
     "CONNECTION_GROUP_ATTRIBUTES" : {
 
+        "FIELD_HEADER_ENABLE_SESSION_AFFINITY"  : "Enable session affinity:",
         "FIELD_HEADER_MAX_CONNECTIONS"          : "Maximum number of connections:",
         "FIELD_HEADER_MAX_CONNECTIONS_PER_USER" : "Maximum number of connections per user:",
 
@@ -37,8 +38,20 @@
         "NAME" : "MySQL"
     },
 
+    "DATA_SOURCE_MYSQL_SHARED" : {
+        "NAME" : "Shared Connections (MySQL)"
+    },
+
     "DATA_SOURCE_POSTGRESQL" : {
         "NAME" : "PostgreSQL"
+    },
+
+    "DATA_SOURCE_POSTGRESQL_SHARED" : {
+        "NAME" : "Shared Connections (PostgreSQL)"
+    },
+
+    "HOME" : {
+        "INFO_SHARED_BY" : "Shared by {USERNAME}"
     },
 
     "USER_ATTRIBUTES" : {

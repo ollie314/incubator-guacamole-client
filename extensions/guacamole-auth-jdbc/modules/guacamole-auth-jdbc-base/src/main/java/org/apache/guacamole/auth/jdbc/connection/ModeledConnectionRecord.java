@@ -59,6 +59,16 @@ public class ModeledConnectionRecord implements ConnectionRecord {
     }
 
     @Override
+    public String getSharingProfileIdentifier() {
+        return model.getSharingProfileIdentifier();
+    }
+
+    @Override
+    public String getSharingProfileName() {
+        return model.getSharingProfileName();
+    }
+
+    @Override
     public Date getStartDate() {
         return model.getStartDate();
     }

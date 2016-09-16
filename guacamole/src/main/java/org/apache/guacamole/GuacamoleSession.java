@@ -23,11 +23,12 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import org.apache.guacamole.GuacamoleException;
 import org.apache.guacamole.environment.Environment;
 import org.apache.guacamole.net.GuacamoleTunnel;
 import org.apache.guacamole.net.auth.AuthenticatedUser;
+import org.apache.guacamole.net.auth.AuthenticationProvider;
 import org.apache.guacamole.net.auth.UserContext;
+import org.apache.guacamole.tunnel.UserTunnel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -58,7 +59,8 @@ public class GuacamoleSession {
     /**
      * All currently-active tunnels, indexed by tunnel UUID.
      */
-    private final Map<String, GuacamoleTunnel> tunnels = new ConcurrentHashMap<String, GuacamoleTunnel>();
+    private final Map<String, UserTunnel> tunnels =
+            new ConcurrentHashMap<String, UserTunnel>();
 
     /**
      * The last time this session was accessed.
@@ -126,6 +128,44 @@ public class GuacamoleSession {
     }
 
     /**
+     * Returns the UserContext associated with this session that originated
+     * from the AuthenticationProvider with the given identifier. If no such
+     * UserContext exists, an exception is thrown.
+     *
+     * @param authProviderIdentifier
+     *     The unique identifier of the AuthenticationProvider that created the
+     *     UserContext being retrieved.
+     *
+     * @return
+     *     The UserContext that was created by the AuthenticationProvider
+     *     having the given identifier.
+     *
+     * @throws GuacamoleException
+     *     If no such UserContext exists.
+     */
+    public UserContext getUserContext(String authProviderIdentifier)
+            throws GuacamoleException {
+
+        // Locate and return the UserContext associated with the
+        // AuthenticationProvider having the given identifier, if any
+        for (UserContext userContext : getUserContexts()) {
+
+            // Get AuthenticationProvider associated with current UserContext
+            AuthenticationProvider authProvider = userContext.getAuthenticationProvider();
+
+            // If AuthenticationProvider identifier matches, done
+            if (authProvider.getIdentifier().equals(authProviderIdentifier))
+                return userContext;
+
+        }
+
+        throw new GuacamoleResourceNotFoundException("Session not associated "
+                + "with authentication provider \"" + authProviderIdentifier + "\".");
+
+
+    }
+
+    /**
      * Replaces all UserContexts associated with this session with the given
      * List of UserContexts.
      *
@@ -156,7 +196,7 @@ public class GuacamoleSession {
      *
      * @return A map of all active tunnels associated with this session.
      */
-    public Map<String, GuacamoleTunnel> getTunnels() {
+    public Map<String, UserTunnel> getTunnels() {
         return tunnels;
     }
 
@@ -166,7 +206,7 @@ public class GuacamoleSession {
      *
      * @param tunnel The tunnel to associate with this session.
      */
-    public void addTunnel(GuacamoleTunnel tunnel) {
+    public void addTunnel(UserTunnel tunnel) {
         tunnels.put(tunnel.getUUID().toString(), tunnel);
     }
 
